@@ -30,6 +30,8 @@ distrobox-tui
 
 Currently it is not possible to *create* Distroboxes in the TUI, but this might be added in the future.
 
+For other planned things see [docs/ROADMAP.md](./docs/ROADMAP.md)
+
 ## Project history
 
 This project is a continuation of the [original](https://github.com/hyperreal64/distrobox-tui) project, created by [@hyperreal64](https://github.com/hyperreal64).
