@@ -132,7 +132,6 @@ func getDistroboxItems() (items []distroboxItem) {
 			labels := strings.Split(jsonElem.Labels, ",")
 			for _, label := range labels {
 				if label == "manager=distrobox" {
-					log.Printf("%+v\n", jsonElem)
 					box := distroboxItem{
 						id:     jsonElem.Id[:12],
 						name:   jsonElem.Names,
