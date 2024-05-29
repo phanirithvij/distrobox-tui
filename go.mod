@@ -1,4 +1,4 @@
-module github.com/hyperreal64/distrobox-tui
+module github.com/phanirithvij/distrobox-tui
 
 go 1.18
 
