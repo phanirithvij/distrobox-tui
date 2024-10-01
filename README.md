@@ -9,6 +9,7 @@ A minimal TUI for [Distrobox](https://github.com/89luca89/distrobox) using [Bubb
 Features [Catppuccin](https://github.com/catppuccin/catppuccin) color palette. Support for theme selection coming in future release.
 
 My intention is to learn the Bubbletea framework by creating something (sort of?) useful.
+
 ## Install
 
 ### Requirements
@@ -17,6 +18,14 @@ My intention is to learn the Bubbletea framework by creating something (sort of?
 
 ```bash
 go install github.com/phanirithvij/distrobox-tui@main
+```
+
+### Nix
+
+It is available in nixpkgs unstable as `distrobox-tui`.
+
+```shell
+nix --extra-experimental-features "flakes nix-command" run github:nixos/nixpkgs/nixos-unstable#distrobox-tui
 ```
 
 ## Usage
