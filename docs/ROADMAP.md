@@ -5,7 +5,7 @@
 - [ ] Makefile for building
 - [ ] nixify build
   - [x] initial nix build in nixpkgs
-  - [ ] nix for dev
+  - [x] nix for dev (shell.nix + default.nix + direnv)
 - [ ] gha for auto releases
   - pkgStatic/musl like miq (viperML/miq)
   - or use nix-portable as a bundler?
