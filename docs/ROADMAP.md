@@ -3,7 +3,7 @@
 ### Project
 
 - [ ] Makefile for building
-- [ ] nixify build
+- [x] nixify build
   - [x] initial nix build in nixpkgs
   - [x] nix for dev (shell.nix + default.nix + direnv)
 - [ ] gha for auto releases
@@ -16,12 +16,13 @@
 
 ### Features
 
-- [ ] Update dependencies and bring it up-to-date
-- [ ] Auto refresh after any operations
+- [x] Update dependencies and bring it up-to-date
+- [x] Auto refresh after any operations
+- [ ] lilipod support
+  - [ ] rm --volumes bug, filed a report 89luca89/lilipod#36
 - [ ] Creating distroboxes
   - [ ] prepopulated with distrobox official list
   - [ ] custom
 - [ ] default arguments to pass to distrobox-enter
   - eg. distrobox-enter --clean-path alpine -- bash --norc
 - [ ] config file XDG_DIR
-
