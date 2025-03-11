@@ -49,6 +49,7 @@ func clearScreen() tea.Cmd {
 func enterDistroBox(name string) tea.Cmd {
 	dbCmd := fmt.Sprintf("clear && distrobox enter %s", name)
 	cmd := exec.Command("/bin/sh", "-c", dbCmd)
+	cmd.Env = os.Environ()
 	return tea.ExecProcess(cmd, func(err error) tea.Msg {
 		return distroboxFinishedMsg{err}
 	})
@@ -61,6 +62,7 @@ func removeDistroBox(name string) tea.Cmd {
 	}
 
 	cmd := exec.Command("distrobox", "rm", name, "--force")
+	cmd.Env = os.Environ()
 	cmd.Stdout = devnull
 	return tea.ExecProcess(cmd, func(err error) tea.Msg {
 		return distroboxFinishedMsg{err}
@@ -74,6 +76,7 @@ func stopDistroBox(name string) tea.Cmd {
 	}
 
 	cmd := exec.Command("distrobox", "stop", name, "--yes")
+	cmd.Env = os.Environ()
 	cmd.Stdout = devnull
 	return tea.ExecProcess(cmd, func(err error) tea.Msg {
 		return distroboxFinishedMsg{err}
@@ -83,6 +86,14 @@ func stopDistroBox(name string) tea.Cmd {
 func getOCICmd() (string, string) {
 	podmanExists := true
 	dockerExists := true
+
+	if value, ok := os.LookupEnv("DBX_CONTAINER_MANAGER"); ok {
+		ociCmd, err := exec.LookPath(value)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		return ociCmd, value
+	}
 
 	podmanCmd, err := exec.LookPath("podman")
 	if err != nil {
