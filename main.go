@@ -138,6 +138,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "R":
 			m = NewModel()
 		}
+	case distroboxFinishedMsg:
+		m = NewModel()
 	}
 
 	return m, tea.Batch(cmds...)
