@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/89luca89/lilipod/pkg/containerutils"
+	lilipod "github.com/89luca89/lilipod/pkg/utils"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -83,35 +86,25 @@ func stopDistroBox(name string) tea.Cmd {
 	})
 }
 
-func getOCICmd() (string, string) {
-	podmanExists := true
-	dockerExists := true
-
-	if value, ok := os.LookupEnv("DBX_CONTAINER_MANAGER"); ok {
-		ociCmd, err := exec.LookPath(value)
+func getOCICmd() (command string, kind string) {
+	var err error
+	var ok bool
+	if kind, ok = os.LookupEnv("DBX_CONTAINER_MANAGER"); ok {
+		command, err = exec.LookPath(kind)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		return ociCmd, value
+		return
 	}
 
-	podmanCmd, err := exec.LookPath("podman")
-	if err != nil {
-		podmanExists = false
+	for _, kind = range []string{"podman", "docker", "lilipod"} {
+		command, err = exec.LookPath("podman")
+		if err == nil {
+			return
+		}
 	}
 
-	dockerCmd, err := exec.LookPath("docker")
-	if err != nil {
-		dockerExists = false
-	}
-
-	if podmanExists {
-		return podmanCmd, "podman"
-	} else if dockerExists {
-		return dockerCmd, "docker"
-	} else {
-		return "", ""
-	}
+	return "", ""
 }
 
 func getDistroboxItems() (items []distroboxItem) {
@@ -120,8 +113,8 @@ func getDistroboxItems() (items []distroboxItem) {
 		log.Fatalln("Missing dependency: we need a container manager. Please install one of podman or docker.")
 	}
 
-	rawOutput, _ := exec.Command(ociCmd, "ps", "-a", "--format", "json", "--no-trunc").Output()
 	if ociKind == "podman" {
+		rawOutput, _ := exec.Command(ociCmd, "ps", "-a", "--format", "json").Output()
 		var outputs []PodmanCmdOutput
 		if err := json.Unmarshal(rawOutput, &outputs); err != nil {
 			log.Fatalln(err)
@@ -135,7 +128,6 @@ func getDistroboxItems() (items []distroboxItem) {
 						status: item.Status,
 						image:  item.Image,
 					}
-
 					items = append(items, box)
 					break
 				}
@@ -152,15 +144,14 @@ func getDistroboxItems() (items []distroboxItem) {
 							status: jsonElem.Status,
 							image:  jsonElem.Image,
 						}
-
 						items = append(items, box)
-
 						break
 					}
 				}
 			}
 		}
-	} else {
+	} else if ociKind == "docker" {
+		rawOutput, _ := exec.Command(ociCmd, "ps", "-a", "--format", "json", "--no-trunc").Output()
 		var outputs []DockerCmdOutput
 		for _, line := range bytes.Split(rawOutput, []byte{'\n'}) {
 			if string(line) == "" {
@@ -180,7 +171,6 @@ func getDistroboxItems() (items []distroboxItem) {
 						status: ociCmdOutput.Status,
 						image:  ociCmdOutput.Image,
 					}
-
 					items = append(items, box)
 					break
 				}
@@ -198,14 +188,58 @@ func getDistroboxItems() (items []distroboxItem) {
 							status: jsonElem.Status,
 							image:  jsonElem.Image,
 						}
-
 						items = append(items, box)
-
 						break
 					}
 				}
 			}
 		}
+	} else if ociKind == "lilipod" {
+		// lilipod --format option takes a go template str, no json option
+		var outputs []*lilipod.Config
+		containers, err := os.ReadDir(containerutils.ContainerDir)
+		if err != nil {
+			log.Println(err)
+		}
+		for _, container := range containers {
+			config, err := containerutils.GetContainerInfo(container.Name(), false, nil)
+			if err != nil {
+				continue
+			}
+			outputs = append(outputs, config)
+			for _, mount := range config.Mounts {
+				if strings.Contains(mount, "/distrobox-export") {
+					box := distroboxItem{
+						id:     config.ID[:12],
+						name:   config.Names,
+						status: config.Status,
+						image:  config.Image,
+					}
+					items = append(items, box)
+					break
+				}
+			}
+		}
+
+		if len(items) == 0 {
+			for _, jsonElem := range outputs {
+				labels := lilipod.MapToList(jsonElem.Labels)
+				for _, label := range labels {
+					if label == "manager=distrobox" {
+						box := distroboxItem{
+							id:     jsonElem.ID[:12],
+							name:   jsonElem.Names,
+							status: jsonElem.Status,
+							image:  jsonElem.Image,
+						}
+						items = append(items, box)
+						break
+					}
+				}
+			}
+		}
+	} else {
+		log.Fatalln(errors.New("Unsupported oci container manager " + ociKind + ". Use one of docker, podman, lilipod"))
 	}
 
 	return items
