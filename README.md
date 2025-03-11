@@ -38,9 +38,12 @@ nix --extra-experimental-features "flakes nix-command" run github:nixos/nixpkgs/
 - Ensure `$GOPATH/bin` is in your shell's $PATH
 
 ```bash
-distrobox-tui
+distrobox-tui # looks for podman, docker, lilipod in that order
+
+# To specify a container manager use one of
 DBX_CONTAINER_MANAGER=podman distrobox-tui
 DBX_CONTAINER_MANAGER=docker distrobox-tui
+DBX_CONTAINER_MANAGER=lilipod distrobox-tui
 ```
 
 Currently it is not possible to _create_ Distroboxes in the TUI, but this might
