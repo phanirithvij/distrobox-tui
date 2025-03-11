@@ -165,7 +165,7 @@ func (m Model) View() string {
 func main() {
 	p := tea.NewProgram(NewModel(), tea.WithAltScreen())
 
-	if err := p.Start(); err != nil {
-		log.Fatal(err)
+	if _, err := p.Run(); err != nil {
+		log.Fatalln(err)
 	}
 }

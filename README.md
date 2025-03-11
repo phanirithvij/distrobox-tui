@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/phanirithvij/distrobox-tui)](https://goreportcard.com/report/github.com/phanirithvij/distrobox-tui)
 
-![screenshot.png](/screenshot.png)
+![screenshot.png](./docs/screenshot.png)
 
 A minimal TUI for [Distrobox](https://github.com/89luca89/distrobox) using [Bubbletea](https://github.com/charmbracelet/bubbletea).
 
