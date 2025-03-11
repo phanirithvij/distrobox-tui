@@ -1,16 +1,15 @@
 {
   lib,
   buildGoModule,
-  fetchFromGitHub,
 }:
 
 buildGoModule rec {
   pname = "distrobox-tui";
   version = "dev";
 
-  src = ./.;
+  src = lib.cleanSource ./.;
 
-  vendorHash = "sha256-zKJrhR/l2HPQXTVgrxYLGGz0pjA0e81jB6H4YrNfH94=";
+  vendorHash = "sha256-y64KqlJsZ8aVK7oBcduEC8VvbutoRC15LMUeZdokPfY=";
 
   ldflags = [ "-s" ];
 
