@@ -21,13 +21,22 @@ type distroboxItem struct {
 	image  string
 }
 
-type OCICmdOutput struct {
+type DockerCmdOutput struct {
 	Id     string `json:"ID"`
 	Image  string `json:"Image"`
 	Labels string `json:"Labels"`
 	Mounts string `json:"Mounts"`
 	Names  string `json:"Names"`
 	Status string `json:"Status"`
+}
+
+type PodmanCmdOutput struct {
+	Id     string            `json:"Id"`
+	Image  string            `json:"Image"`
+	Labels map[string]string `json:"Labels"`
+	Mounts []string          `json:"Mounts"`
+	Names  []string          `json:"Names"`
+	Status string            `json:"Status"`
 }
 
 func clearScreen() tea.Cmd {
@@ -71,7 +80,7 @@ func stopDistroBox(name string) tea.Cmd {
 	})
 }
 
-func getOCICmd() string {
+func getOCICmd() (string, string) {
 	podmanExists := true
 	dockerExists := true
 
@@ -86,62 +95,103 @@ func getOCICmd() string {
 	}
 
 	if podmanExists {
-		return podmanCmd
+		return podmanCmd, "podman"
 	} else if dockerExists {
-		return dockerCmd
+		return dockerCmd, "docker"
 	} else {
-		return ""
+		return "", ""
 	}
 }
 
 func getDistroboxItems() (items []distroboxItem) {
-	ociCmd := getOCICmd()
+	ociCmd, ociKind := getOCICmd()
 	if ociCmd == "" {
 		log.Fatalln("Missing dependency: we need a container manager. Please install one of podman or docker.")
 	}
-	var outputs []OCICmdOutput
 
 	rawOutput, _ := exec.Command(ociCmd, "ps", "-a", "--format", "json", "--no-trunc").Output()
-	for _, line := range bytes.Split(rawOutput, []byte{'\n'}) {
-		if string(line) == "" {
-			continue
-		}
-		var ociCmdOutput OCICmdOutput
-		if err := json.Unmarshal(line, &ociCmdOutput); err != nil {
+	if ociKind == "podman" {
+		var outputs []PodmanCmdOutput
+		if err := json.Unmarshal(rawOutput, &outputs); err != nil {
 			log.Fatalln(err)
 		}
-		outputs = append(outputs, ociCmdOutput)
-
-		for _, mount := range strings.Split(ociCmdOutput.Mounts, ",") {
-			if strings.Contains(mount, "/distrobox-export") {
-				box := distroboxItem{
-					id:     ociCmdOutput.Id[:12],
-					name:   ociCmdOutput.Names,
-					status: ociCmdOutput.Status,
-					image:  ociCmdOutput.Image,
-				}
-
-				items = append(items, box)
-				break
-			}
-		}
-	}
-
-	if len(items) == 0 {
-		for _, jsonElem := range outputs {
-			labels := strings.Split(jsonElem.Labels, ",")
-			for _, label := range labels {
-				if label == "manager=distrobox" {
+		for _, item := range outputs {
+			for _, mount := range item.Mounts {
+				if strings.Contains(mount, "/distrobox-export") {
 					box := distroboxItem{
-						id:     jsonElem.Id[:12],
-						name:   jsonElem.Names,
-						status: jsonElem.Status,
-						image:  jsonElem.Image,
+						id:     item.Id[:12],
+						name:   strings.Join(item.Names, ","),
+						status: item.Status,
+						image:  item.Image,
 					}
 
 					items = append(items, box)
-
 					break
+				}
+			}
+		}
+
+		if len(items) == 0 {
+			for _, jsonElem := range outputs {
+				for _, label := range jsonElem.Labels {
+					if label == "manager=distrobox" {
+						box := distroboxItem{
+							id:     jsonElem.Id[:12],
+							name:   strings.Join(jsonElem.Names, ","),
+							status: jsonElem.Status,
+							image:  jsonElem.Image,
+						}
+
+						items = append(items, box)
+
+						break
+					}
+				}
+			}
+		}
+	} else {
+		var outputs []DockerCmdOutput
+		for _, line := range bytes.Split(rawOutput, []byte{'\n'}) {
+			if string(line) == "" {
+				continue
+			}
+			var ociCmdOutput DockerCmdOutput
+			if err := json.Unmarshal(line, &ociCmdOutput); err != nil {
+				log.Fatalln(err)
+			}
+			outputs = append(outputs, ociCmdOutput)
+
+			for _, mount := range strings.Split(ociCmdOutput.Mounts, ",") {
+				if strings.Contains(mount, "/distrobox-export") {
+					box := distroboxItem{
+						id:     ociCmdOutput.Id[:12],
+						name:   ociCmdOutput.Names,
+						status: ociCmdOutput.Status,
+						image:  ociCmdOutput.Image,
+					}
+
+					items = append(items, box)
+					break
+				}
+			}
+		}
+
+		if len(items) == 0 {
+			for _, jsonElem := range outputs {
+				labels := strings.Split(jsonElem.Labels, ",")
+				for _, label := range labels {
+					if label == "manager=distrobox" {
+						box := distroboxItem{
+							id:     jsonElem.Id[:12],
+							name:   jsonElem.Names,
+							status: jsonElem.Status,
+							image:  jsonElem.Image,
+						}
+
+						items = append(items, box)
+
+						break
+					}
 				}
 			}
 		}
