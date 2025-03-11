@@ -19,6 +19,7 @@ of?) useful.
 
 - Go 1.18+
 - Distrobox
+- Linux
 
 ```bash
 go install github.com/phanirithvij/distrobox-tui@main
